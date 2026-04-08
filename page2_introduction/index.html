@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:         #07090f;
+            --text:       #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent:     #38bdf8;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            width: 100vw; height: 100vh;
+            background: var(--bg);
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            overflow: hidden;
+        }
+
+        .intro-inner {
+            max-width: 720px;
+            text-align: center;
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+        }
+
+        p {
+            font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+            line-height: 1.75;
+            color: var(--text-muted);
+        }
+
+        strong { color: var(--text); }
+
+        .btn-outline {
+            display: inline-block;
+            margin-top: 2.5rem;
+            padding: 0.7rem 2.2rem;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            text-decoration: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            transition: background 0.25s, color 0.25s;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover { background: var(--accent); color: var(--bg); }
+    </style>
+</head>
+<body>
+    <div class="intro-inner">
+        <div class="section-label">Introduction</div>
+        <p>
+            <strong>Air quality has a big influence on people's health.</strong>
+            Smart cities use data to drive global urban decision-making.
+            In reality, data collections are embedded with assumptions.
+        </p>
+        <a class="btn-outline" href="#">More info &nbsp;→</a>
+    </div>
+    <script>
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            window.parent.postMessage({ fpScroll: e.deltaY > 0 ? 'down' : 'up' }, '*');
+        }, { passive: false });
+    </script>
+</body>
+</html>
