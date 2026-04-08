@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.0/mapbox-gl.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 100vw; height: 100vh; overflow: hidden; background: #07090f; }
+        #map { width: 100%; height: 100%; }
+        .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
+
+        /* ── Legend ──────────────────────────────────────────────────────── */
+        #legend {
+            position: absolute;
+            bottom: 1.8rem;
+            left: 1.4rem;
+            z-index: 10;
+            background: rgba(7, 9, 15, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            padding: 0.9rem 1.1rem;
+            min-width: 200px;
+            font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+            color: #e2e8f0;
+        }
+
+        .legend-title {
+            font-family: 'Space Mono', 'Courier New', monospace;
+            font-size: 0.64rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 0.65rem;
+            line-height: 1.5;
+        }
+
+        .legend-bar {
+            width: 100%;
+            height: 9px;
+            background: linear-gradient(to right, #ffffff 0%, #93c5fd 10%, #3b82f6 27%, #1d4ed8 100%);
+            margin-bottom: 0.3rem;
+        }
+
+        .legend-scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.63rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+
+        .legend-zero {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .legend-stripe {
+            width: 22px;
+            height: 10px;
+            flex-shrink: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.18),
+                rgba(255, 255, 255, 0.18) 2px,
+                transparent 2px,
+                transparent 6px
+            );
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div id="legend">
+        <div class="legend-title">% of population within<br>5 km of a sensor</div>
+        <div class="legend-bar"></div>
+        <div class="legend-scale-labels">
+            <span>0%</span>
+            <span>10%</span>
+            <span>26%</span>
+            <span>97%</span>
+        </div>
+        <div class="legend-zero">
+            <div class="legend-stripe"></div>
+            <span>No coverage</span>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN = 'pk.eyJ1IjoiZW1pbHlkdWdtb3JlIiwiYSI6ImNta285NjZiZzAzMzQza3M5ZmRodHp6ZDcifQ.geVyLy4fYjBWRAGJSbwN-g';
+        mapboxgl.accessToken = TOKEN;
+
+        const POP_COLOR = [
+            'interpolate', ['linear'], ['raster-value'],
+            0,      'rgba(0,0,0,0)',
+            0.2667, '#f4fbf3', 0.3961, '#f4fbf3',
+            0.4,    '#d9f2e5', 0.5137, '#d9f2e5',
+            0.5176, '#a8e3e6', 0.5961, '#a8e3e6',
+            0.6,    '#71c7d8', 0.6549, '#71c7d8',
+            0.6588, '#428bcc', 0.7059, '#428bcc',
+            0.7098, '#356bb4', 0.7451, '#356bb4',
+            0.7490, '#2b4da0', 0.7686, '#2b4da0',
+            0.7725, '#28309f', 0.7961, '#28309f',
+            0.8,    '#521f8b', 0.8118, '#521f8b',
+            0.8157, '#700180', 0.8353, '#700180',
+            0.8392, '#9a0049', 0.8627, '#9a0049',
+            0.8667, '#cc003d', 0.8902, '#cc003d',
+            0.8941, '#ef0405', 0.9333, '#ef0405',
+            0.9373, '#f16206', 0.9686, '#f16206',
+            0.9725, '#f39e03', 0.9922, '#f39e03',
+            0.9961, '#f5c402', 1.0,   '#f5c402'
+        ];
+
+        // Diagonal stripe tile used for 0% countries
+        function makeStripePattern() {
+            const size = 8;
+            const data = new Uint8Array(size * size * 4);
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const i  = (y * size + x) * 4;
+                    const on = ((x + y) % 6) < 2;
+                    data[i] = data[i+1] = data[i+2] = 255;
+                    data[i+3] = on ? 55 : 0;
+                }
+            }
+            return { width: size, height: size, data };
+        }
+
+        // Zoom threshold at which sensors + population appear
+        const DETAIL_ZOOM = 3;
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/emilydugmore/cmneoxtrw003a01r11o2c6f7f',
+            center: [0, 20],
+            zoom: 1.8,
+            projection: 'mercator'
+        });
+
+        // Cache country bounds at overview zoom so fitBounds works at any zoom level
+        const countryCache = {};
+
+        function buildCountryCache() {
+            const features = map.querySourceFeatures('countries', { sourceLayer: 'country_data' });
+            for (const feat of features) {
+                const abb = feat.properties.C_abb;
+                if (!abb || !feat.geometry) continue;
+                try {
+                    const b = geoBounds(feat.geometry);
+                    if (!countryCache[abb]) {
+                        countryCache[abb] = b;
+                    } else {
+                        const c = countryCache[abb];
+                        c[0][0] = Math.min(c[0][0], b[0][0]);
+                        c[0][1] = Math.min(c[0][1], b[0][1]);
+                        c[1][0] = Math.max(c[1][0], b[1][0]);
+                        c[1][1] = Math.max(c[1][1], b[1][1]);
+                    }
+                } catch (_) {}
+            }
+        }
+
+        function geoBounds(geometry) {
+            let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+            const rings = geometry.type === 'Polygon'
+                ? geometry.coordinates
+                : geometry.coordinates.flat();
+            for (const ring of rings) {
+                for (const [lng, lat] of ring) {
+                    if (lng < minLng) minLng = lng;
+                    if (lat < minLat) minLat = lat;
+                    if (lng > maxLng) maxLng = lng;
+                    if (lat > maxLat) maxLat = lat;
+                }
+            }
+            return [[minLng, minLat], [maxLng, maxLat]];
+        }
+
+        map.on('load', () => {
+            map.setFog(null);
+            map.addImage('stripes', makeStripePattern());
+
+            // ── Country boundaries (vector) ──────────────────────────────────
+            map.addSource('countries', {
+                type: 'vector',
+                url: 'mapbox://emilydugmore.48mjdbxk'
+            });
+
+            // Choropleth fill — countries with C_S_per >= 0.5%
+            map.addLayer({
+                id: 'country-choropleth',
+                type: 'fill',
+                slot: 'middle',
+                source: 'countries',
+                'source-layer': 'country_data',
+                maxzoom: DETAIL_ZOOM,
+                filter: ['>=', ['coalesce', ['get', 'C_S_per'], 0], 0.5],
+                paint: {
+                    'fill-color': [
+                        'interpolate', ['linear'], ['coalesce', ['get', 'C_S_per'], 0],
+                        0,  'rgba(233, 243, 255, 1)',
+                        10, 'rgba(147, 197, 253, 1)',
+                        26, 'rgba(59,  130, 246, 1)',
+                        97, 'rgba(29,  78,  216, 1)'
+                    ],
+                    'fill-emissive-strength': 0.6,
+                    'fill-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        DETAIL_ZOOM - 0.5, 1,
+                        DETAIL_ZOOM,       0
+                    ]
+                }
+            });
+
+            // Stripe fill — countries with < 0.5% (no coverage)
+            map.addLayer({
+                id: 'country-zero',
+                type: 'fill',
+                slot: 'middle',
+                source: 'countries',
+                'source-layer': 'country_data',
+                maxzoom: DETAIL_ZOOM,
+                filter: ['<', ['coalesce', ['get', 'C_S_per'], 0], 0.5],
+                paint: {
+                    'fill-pattern': 'stripes',
+                    'fill-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        DETAIL_ZOOM - 0.5, 1,
+                        DETAIL_ZOOM,       0
+                    ]
+                }
+            });
+
+            // Subtle country outline
+            map.addLayer({
+                id: 'country-outline',
+                type: 'line',
+                slot: 'middle',
+                source: 'countries',
+                'source-layer': 'country_data',
+                maxzoom: DETAIL_ZOOM,
+                paint: {
+                    'line-color': 'rgba(255,255,255,0.12)',
+                    'line-width': 0.5
+                }
+            });
+
+            // Hover highlight
+            map.addLayer({
+                id: 'country-hover',
+                type: 'fill',
+                slot: 'middle',
+                source: 'countries',
+                'source-layer': 'country_data',
+                filter: ['==', ['get', 'C_abb'], ''],
+                paint: {
+                    'fill-color': 'rgba(255,255,255,0.12)',
+                    'fill-opacity': 1
+                }
+            });
+
+            // Invisible hit area
+            map.addLayer({
+                id: 'country-hit',
+                type: 'fill',
+                slot: 'middle',
+                source: 'countries',
+                'source-layer': 'country_data',
+                paint: { 'fill-color': 'rgba(0,0,0,0)', 'fill-opacity': 0 }
+            });
+
+            // Selected country outline — persists at all zoom levels after click
+            map.addLayer({
+                id: 'country-selected-outline',
+                type: 'line',
+                slot: 'top',
+                source: 'countries',
+                'source-layer': 'country_data',
+                filter: ['==', ['get', 'C_abb'], ''],
+                paint: {
+                    'line-color': '#ffffff',
+                    'line-emissive-strength': 1,
+                    'line-width': 3,
+                    'line-opacity': 1
+                }
+            });
+
+            // ── World population raster — only appears when zoomed in ─────────
+            map.addSource('pop', {
+                type: 'raster',
+                tiles: [`https://api.mapbox.com/v4/emilydugmore.2k3zq36w/{z}/{x}/{y}.jpg?access_token=${TOKEN}`],
+                tileSize: 256
+            });
+            map.addLayer({
+                id: 'pop-layer',
+                type: 'raster',
+                slot: 'bottom',
+                source: 'pop',
+                minzoom: DETAIL_ZOOM,
+                paint: {
+                    'raster-emissive-strength': 1,
+                    'raster-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        DETAIL_ZOOM,       0,
+                        DETAIL_ZOOM + 0.2, 0.5
+                    ],
+                    'raster-color': POP_COLOR
+                }
+            });
+
+            // ── Sensor dots — only appear when zoomed in ──────────────────────
+            map.addSource('sensors', { type: 'vector', url: 'mapbox://emilydugmore.96ka7gjb' });
+            map.addLayer({
+                id: 'sensor-dots',
+                type: 'circle',
+                slot: 'middle',
+                source: 'sensors',
+                'source-layer': 'AQICN_sensors-5r58jr',
+                minzoom: DETAIL_ZOOM,
+                paint: {
+                    'circle-emissive-strength': 1,
+                    'circle-radius': 5,
+                    'circle-color': '#1d4ed8',
+                    'circle-stroke-width': 1.5,
+                    'circle-stroke-color': '#ffffff',
+                    'circle-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        DETAIL_ZOOM,       0,
+                        DETAIL_ZOOM + 0.2, 1
+                    ],
+                    'circle-stroke-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        DETAIL_ZOOM,       0,
+                        DETAIL_ZOOM + 0.2, 1
+                    ]
+                }
+            });
+
+            // ── Hover highlight ───────────────────────────────────────────────
+            map.on('mousemove', 'country-hit', (e) => {
+                if (!e.features.length) return;
+                map.getCanvas().style.cursor = 'pointer';
+                map.setFilter('country-hover', ['==', ['get', 'C_abb'], e.features[0].properties.C_abb || '']);
+            });
+
+            map.on('mouseleave', 'country-hit', () => {
+                map.getCanvas().style.cursor = '';
+                map.setFilter('country-hover', ['==', ['get', 'C_abb'], '']);
+            });
+
+            // ── Click: fit to country extent + show outline ───────────────────
+            map.on('click', 'country-hit', (e) => {
+                if (!e.features.length) return;
+                const abb = e.features[0].properties.C_abb || '';
+                map.setFilter('country-selected-outline', ['==', ['get', 'C_abb'], abb]);
+
+                // Start with cached bounds (built at overview zoom), then expand
+                // with all currently loaded tile fragments of this country so the
+                // bounds are as complete as possible regardless of current zoom.
+                let bounds = countryCache[abb]
+                    ? [countryCache[abb][0].slice(), countryCache[abb][1].slice()]
+                    : null;
+
+                const fragments = map.querySourceFeatures('countries', {
+                    sourceLayer: 'country_data',
+                    filter: ['==', ['get', 'C_abb'], abb]
+                });
+                for (const feat of fragments) {
+                    try {
+                        const b = geoBounds(feat.geometry);
+                        if (!bounds) {
+                            bounds = [[b[0][0], b[0][1]], [b[1][0], b[1][1]]];
+                        } else {
+                            bounds[0][0] = Math.min(bounds[0][0], b[0][0]);
+                            bounds[0][1] = Math.min(bounds[0][1], b[0][1]);
+                            bounds[1][0] = Math.max(bounds[1][0], b[1][0]);
+                            bounds[1][1] = Math.max(bounds[1][1], b[1][1]);
+                        }
+                    } catch (_) {}
+                }
+
+                // Persist the best bounds we've computed back to the cache
+                if (bounds) countryCache[abb] = bounds;
+
+                try {
+                    map.fitBounds(bounds || geoBounds(e.features[0].geometry),
+                        { padding: 60, duration: 1400, maxZoom: 8 });
+                } catch (_) {
+                    map.flyTo({ center: e.lngLat, zoom: 5, duration: 1400 });
+                }
+            });
+        });
+
+        map.on('idle', buildCountryCache);
+    </script>
+</body>
+</html>

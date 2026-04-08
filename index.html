@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Global Disparities in Air Quality Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.20/fullpage.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg:         #07090f;
+            --bg-panel:   rgba(7, 9, 15, 0.93);
+            --text:       #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent:     #38bdf8;
+            --border:     rgba(255, 255, 255, 0.07);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        #fp-nav ul li a span { background: var(--accent) !important; }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+        }
+
+        /* ── PAGE 1 — LANDING ─────────────────────────── */
+        .landing {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 50%, rgba(56,189,248,0.06) 0%, transparent 70%),
+                var(--bg);
+        }
+
+        .landing h1 {
+            font-size: clamp(1.9rem, 3.8vw, 4.2rem);
+            font-weight: 700;
+            line-height: 1.08;
+            letter-spacing: -0.025em;
+            max-width: 960px;
+            background: linear-gradient(150deg, #ffffff 0%, #cbd5e1 60%, #64748b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .landing-sub {
+            margin-top: 1.8rem;
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .scroll-cue {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            animation: float 2.4s ease-in-out infinite;
+        }
+
+        .scroll-cue svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+            50%       { transform: translateX(-50%) translateY(7px); opacity: 1; }
+        }
+
+        /* ── PAGE 2 — INTRODUCTION ────────────────────── */
+        .intro-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 3rem;
+        }
+
+        .intro-inner { max-width: 720px; text-align: center; }
+
+        .intro-inner p {
+            font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+            line-height: 1.75;
+            color: var(--text-muted);
+        }
+
+        .intro-inner strong { color: var(--text); }
+
+        .btn-outline {
+            display: inline-block;
+            margin-top: 2.5rem;
+            padding: 0.7rem 2.2rem;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            text-decoration: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            transition: background 0.25s, color 0.25s;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover { background: var(--accent); color: var(--bg); }
+
+        /* ── MAP + SIDEBAR LAYOUT ─────────────────────── */
+        .map-section {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .map-frame { flex: 1; border: none; display: block; }
+
+        .sidebar {
+            width: 360px;
+            min-width: 320px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid var(--border);
+            padding: 3rem 2.2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1.4rem;
+            overflow-y: auto;
+        }
+
+        .sidebar p { font-size: 0.92rem; line-height: 1.75; color: var(--text-muted); }
+        .sidebar strong { color: var(--text); }
+
+        .note {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(148,163,184,0.45);
+            border: 1px solid var(--border);
+            padding: 0.6rem 0.8rem;
+        }
+
+        /* ── PAGE 4 — STATS ───────────────────────────── */
+        .stats-section {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .charts-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 3rem 3rem 3rem 3.5rem;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .chart-wrap { flex: 1; max-height: 44%; }
+
+        .chart-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .chart-inner { position: relative; width: 100%; height: calc(100% - 1.4rem); }
+
+        /* ── EXPLORE REASONS ──────────────────────────── */
+        .topic-buttons { display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .topic-btn {
+            padding: 0.55rem 1.1rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+
+        .topic-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .topic-btn.active {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.08);
+            color: var(--accent);
+        }
+
+        .topic-content { display: none; flex-direction: column; gap: 1rem; }
+        .topic-content.visible { display: flex; }
+    </style>
+</head>
+<body>
+
+<div id="fullpage">
+
+    <!-- PAGE 1 — LANDING -->
+    <div class="section">
+        <div class="landing">
+            <div class="section-label">Air Quality Research</div>
+            <h1>Investigating Global Disparities in Air Quality Analytics</h1>
+            <span class="landing-sub">A Data Visualisation</span>
+            <div class="scroll-cue">
+                <span>Scroll to explore</span>
+                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2 — INTRODUCTION -->
+    <div class="section">
+        <div class="intro-wrap">
+            <div class="intro-inner">
+                <div class="section-label">Introduction</div>
+                <p>
+                    <strong>Air quality has a big influence on people's health.</strong>
+                    Smart cities use data to drive global urban decision-making.
+                    In reality, data collections are embedded with assumptions.
+                </p>
+                <a class="btn-outline" href="#">More info &nbsp;→</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3 — GLOBAL SENSOR COVERAGE -->
+    <div class="section">
+        <div class="map-section">
+            <iframe id="map3-frame" class="map-frame" src="page3_global_coverage/map.html"></iframe>
+            <div class="sidebar">
+                <div class="section-label">Global sensor coverage</div>
+                <p>Each country is shaded by the <strong>percentage of its population</strong> living within 5 km of an air quality sensor.</p>
+                <p><strong>Dark blue</strong> indicates high coverage. <strong>Light blue</strong> indicates low coverage. <strong>Striped countries</strong> have no recorded sensor coverage at all.</p>
+                <p>The map reveals stark global inequalities — some countries measure their air quality in detail, while others have almost no data at all.</p>
+                <p>Zoom in to explore <strong>exact sensor locations</strong> and underlying population density.</p>
+                <span class="note">Hover over any country for exact statistics. Click to zoom in.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4 — REGIONAL STATS -->
+    <div class="section">
+        <div class="stats-section">
+            <div class="charts-area">
+                <div class="chart-wrap">
+                    <div class="chart-title">Sensors per million population by region (placeholder)</div>
+                    <div class="chart-inner"><canvas id="barChart"></canvas></div>
+                </div>
+                <div class="chart-wrap">
+                    <div class="chart-title">Cumulative sensor growth by income group (placeholder)</div>
+                    <div class="chart-inner"><canvas id="lineChart"></canvas></div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="section-label">Regional patterns</div>
+                <p><strong>So why are there such big differences in air quality measures regionally?</strong></p>
+                <p>The charts reveal stark contrasts in sensor density and data coverage across world regions — patterns that reflect much deeper structural inequalities in who gets to measure, and who gets measured.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 5 — EXPLORE REASONS FOR GAPS -->
+    <div class="section">
+        <div class="map-section">
+            <iframe id="reasons-frame" class="map-frame" src="page6_economic/map.html"></iframe>
+            <div class="sidebar">
+                <div class="section-label">Why the gaps?</div>
+                <p>The disparities in air quality monitoring are driven by a combination of factors. Select a theme to explore:</p>
+                <div class="topic-buttons">
+                    <button class="topic-btn" data-topic="political">Political</button>
+                    <button class="topic-btn" data-topic="policy">Policy</button>
+                    <button class="topic-btn" data-topic="economic">Economic &amp; Infrastructure</button>
+                </div>
+                <div id="topic-political" class="topic-content">
+                    <p>South Korea has the <strong>best sensor coverage</strong> in the world, with 88% of the population living within 5 km of an air quality sensor.</p>
+                    <p>Just next door, <strong>North Korea has none</strong>. The border between these two countries represents one of the starkest data divides on Earth — driven not by geography, but by governance.</p>
+                </div>
+                <div id="topic-policy" class="topic-content">
+                    <p>Chicago benefits from a dense, well-funded sensor network embedded across its neighbourhoods.</p>
+                    <p>Cairo, one of the world's most air-polluted cities, has comparatively sparse monitoring infrastructure. <strong>What we can't see, we can't act on.</strong></p>
+                </div>
+                <div id="topic-economic" class="topic-content">
+                    <p>Regions in Africa are among the <strong>most populated in the world</strong>, but little air measurement data is available.</p>
+                    <p>This is largely due to <strong>economic and infrastructure constraints</strong> — sensors are expensive to procure, maintain and calibrate.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullPage.js/4.0.20/fullpage.min.js"></script>
+<script>
+
+new fullpage('#fullpage', {
+    autoScrolling:      true,
+    navigation:         true,
+    navigationPosition: 'right',
+    scrollingSpeed:     900,
+    easingcss3:         'cubic-bezier(0.645, 0.045, 0.355, 1.000)',
+    css3:               true,
+    anchors:            ['landing','introduction','measure','stats','reasons'],
+    navigationTooltips: ['Landing','Introduction','Measuring AQ','Regional Stats','Explore Reasons'],
+    afterLoad: function (_origin, destination) {
+        if (destination.index === 3 && !chartsReady) initCharts();
+    }
+});
+
+/* ── Explore reasons topic buttons ───────────────────────────────── */
+document.querySelectorAll('.topic-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const topic = this.dataset.topic;
+        document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.topic-content').forEach(c => c.classList.remove('visible'));
+        document.getElementById('topic-' + topic).classList.add('visible');
+        document.getElementById('reasons-frame').contentWindow.postMessage({ action: 'flyTo', topic }, '*');
+    });
+});
+
+/* ── Charts ──────────────────────────────────────────────────────── */
+let chartsReady = false;
+
+function initCharts() {
+    chartsReady = true;
+    const gridColor  = 'rgba(255,255,255,0.05)';
+    const tickOpts   = { color: '#64748b', font: { family: 'Space Grotesk', size: 11 } };
+    const baseScales = {
+        x: { grid: { color: gridColor }, ticks: tickOpts, border: { color: 'rgba(255,255,255,0.07)' } },
+        y: { grid: { color: gridColor }, ticks: tickOpts, border: { color: 'rgba(255,255,255,0.07)' } }
+    };
+
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: ['N. America','Europe','E. Asia','S. Asia','Latin America','Middle East','Sub-Saharan Africa'],
+            datasets: [{
+                label: 'Sensors per million population',
+                data: [142, 189, 67, 12, 18, 9, 3],
+                backgroundColor: [
+                    'rgba(56,189,248,0.55)','rgba(56,189,248,0.55)','rgba(56,189,248,0.45)',
+                    'rgba(249,115,22,0.55)','rgba(249,115,22,0.45)',
+                    'rgba(168,85,247,0.55)','rgba(168,85,247,0.55)'
+                ],
+                borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderRadius: 2
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: baseScales
+        }
+    });
+
+    new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+            labels: ['2015','2016','2017','2018','2019','2020','2021','2022','2023'],
+            datasets: [
+                { label: 'High income',   data: [1200,1800,2600,3800,5200,6100,7400,8900,10200], borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.08)',  fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2 },
+                { label: 'Middle income', data: [300,480,620,850,1100,1400,1750,2100,2500],      borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.08)',  fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2 },
+                { label: 'Low income',    data: [20,30,45,55,70,90,110,130,160],                 borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.08)', fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Space Grotesk', size: 11 }, boxWidth: 12 } } },
+            scales: baseScales
+        }
+    });
+}
+
+</script>
+</body>
+</html>
