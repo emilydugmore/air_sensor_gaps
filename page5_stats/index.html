@@ -3,31 +3,19 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/global.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        :root {
-            --bg:         #07090f;
-            --bg-panel:   rgba(7, 9, 15, 0.93);
-            --text:       #e2e8f0;
-            --text-muted: #94a3b8;
-            --accent:     #38bdf8;
-            --border:     rgba(255, 255, 255, 0.07);
-        }
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             width: 100vw; height: 100vh;
             background: var(--bg);
-            font-family: 'Space Grotesk', sans-serif;
             color: var(--text);
             display: flex;
             overflow: hidden;
         }
 
         .section-label {
-            font-family: 'Space Mono', monospace;
+
             font-size: 0.7rem;
             letter-spacing: 0.22em;
             text-transform: uppercase;
@@ -48,7 +36,7 @@
         .chart-wrap { flex: 1; max-height: 44%; }
 
         .chart-title {
-            font-family: 'Space Mono', monospace;
+
             font-size: 0.68rem;
             letter-spacing: 0.15em;
             text-transform: uppercase;
@@ -105,7 +93,7 @@
 
     <script>
         const gridColor = 'rgba(255,255,255,0.05)';
-        const tickOpts  = { color: '#64748b', font: { family: 'Space Grotesk', size: 11 } };
+        const tickOpts  = { color: '#64748b', font: { family: 'Manrope', size: 11 } };
         const baseScales = {
             x: { grid: { color: gridColor }, ticks: tickOpts, border: { color: 'rgba(255,255,255,0.07)' } },
             y: { grid: { color: gridColor }, ticks: tickOpts, border: { color: 'rgba(255,255,255,0.07)' } }
@@ -119,7 +107,7 @@
                     label: 'Sensors per million population',
                     data: [142, 189, 67, 12, 18, 9, 3],
                     backgroundColor: [
-                        'rgba(56,189,248,0.55)','rgba(56,189,248,0.55)','rgba(56,189,248,0.45)',
+                        'rgba(235,148,41,0.55)','rgba(235,148,41,0.55)','rgba(235,148,41,0.45)',
                         'rgba(249,115,22,0.55)','rgba(249,115,22,0.45)',
                         'rgba(168,85,247,0.55)','rgba(168,85,247,0.55)'
                     ],
@@ -143,7 +131,7 @@
                     {
                         label: 'High income',
                         data: [1200,1800,2600,3800,5200,6100,7400,8900,10200],
-                        borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.08)',
+                        borderColor: '#eb9429', backgroundColor: 'rgba(235,148,41,0.08)',
                         fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2
                     },
                     {
@@ -163,7 +151,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: { labels: { color: '#94a3b8', font: { family: 'Space Grotesk', size: 11 }, boxWidth: 12 } }
+                    legend: { labels: { color: '#94a3b8', font: { family: 'Manrope', size: 11 }, boxWidth: 12 } }
                 },
                 scales: baseScales
             }
