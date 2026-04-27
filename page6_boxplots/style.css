@@ -1,0 +1,168 @@
+/* Syne + JetBrains Mono are used inside the SVG chart */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ── PAGE LAYOUT ─────────────────────────────── */
+body {
+  background: var(--bg);
+  color:      #ffffff;
+  overflow:   hidden;
+  height:     100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(235,148,41,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(235,148,41,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  height:         100vh;
+  padding:        1rem 0.75rem 0;
+  position:       relative;
+  z-index:        1;
+  display:        flex;
+  flex-direction: column;
+}
+
+/* ── PAGE HEADING ────────────────────────────── */
+.page-heading {
+  flex-shrink:    0;
+  font-size:      clamp(1.1rem, 1.8vw, 1.6rem);
+  font-weight:    800;
+  letter-spacing: -0.02em;
+  color:          var(--accent);
+  margin-bottom:  0.5rem;
+}
+
+/* ── HEADER ──────────────────────────────────── */
+#header {
+  flex-shrink:    0;
+  margin-bottom:  0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom:  2px solid var(--border);
+}
+
+#header h1 {
+  font-size:      1.3rem;
+  font-weight:    800;
+  letter-spacing: -.01em;
+  margin-bottom:  .25rem;
+}
+
+#header p {
+  font-family:    'JetBrains Mono', monospace;
+  font-size:      .68rem;
+  color:          #ffffff;
+  letter-spacing: .04em;
+}
+
+/* ── LEGEND ──────────────────────────────────── */
+#legend {
+  flex-shrink:    0;
+  display:        flex;
+  gap:            2rem;
+  margin-bottom:  0.5rem;
+  font-family:    'JetBrains Mono', monospace;
+  font-size:      .68rem;
+  color:          #ffffff;
+  align-items:    center;
+  letter-spacing: .03em;
+}
+
+.legend-item {
+  display:     flex;
+  align-items: center;
+  gap:         .45rem;
+}
+
+.legend-dot {
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+  background:    var(--accent);
+  opacity:       .5;
+  flex-shrink:   0;
+}
+
+.legend-dot.highlighted {
+  opacity:    1;
+  background: #ffffff;
+  width:      10px;
+  height:     10px;
+}
+
+.legend-dot.highlighted.top {
+  border:     1.5px solid #f87171;
+  box-shadow: 0 0 6px rgba(248,113,113,0.45);
+}
+
+.legend-dot.highlighted.bottom {
+  border:     1.5px solid #22c55e;
+  box-shadow: 0 0 6px rgba(74,222,128,0.45);
+}
+
+.legend-iqr {
+  width:         10px;
+  height:        18px;
+  background:    rgba(235,148,41,0.12);
+  border:        1px solid rgba(235,148,41,0.25);
+  border-radius: 2px;
+  flex-shrink:   0;
+}
+
+.legend-mean {
+  width:         14px;
+  height:        2px;
+  background:    #eb9429;
+  border-radius: 1px;
+  flex-shrink:   0;
+}
+
+/* ── CHART CONTAINER ─────────────────────────── */
+#chart-container {
+  flex:       1;
+  min-height: 0;
+  position:   relative;
+}
+
+#chart-container svg { display: block; }
+
+/* ── TOOLTIP ─────────────────────────────────── */
+#tooltip {
+  position:       fixed;
+  background:     var(--bg-panel);
+  border:         1px solid var(--border);
+  border-left:    2px solid var(--accent);
+  border-radius:  5px;
+  padding:        .5rem .85rem;
+  font-size:      .76rem;
+  pointer-events: none;
+  opacity:        0;
+  transition:     opacity .1s;
+  z-index:        999;
+  min-width:      150px;
+  box-shadow:     0 4px 20px rgba(0,0,0,0.4);
+}
+
+#tooltip .tt-city {
+  font-weight:   700;
+  font-size:     .85rem;
+  color:         var(--text);
+  margin-bottom: 2px;
+}
+#tooltip .tt-country {
+  color:     var(--text-muted);
+  font-size: .8rem;
+}
+#tooltip .tt-score {
+  color:       #ffffff;
+  font-weight: 700;
+  margin-top:  .3rem;
+  font-size:   .8rem;
+}
