@@ -65,12 +65,12 @@
 
         #info-btn {
             background: none; border: 1px solid rgba(255,255,255,0.12);
-            color: #64748b; font-size: 0.65rem; font-family: 'Manrope', sans-serif;
+            color: #ffffff; font-size: 0.65rem; font-family: 'Manrope', sans-serif;
             padding: 0.25rem 0.5rem; cursor: default;
             letter-spacing: 0.05em; transition: color 0.2s, border-color 0.2s;
         }
 
-        #info-btn:hover { color: #e2e8f0; border-color: rgba(255,255,255,0.3); }
+        #info-btn:hover { color: #e78d06; border-color: rgba(255,255,255,0.3); }
 
         #info-tooltip {
             position: absolute; bottom: calc(100% + 0.5rem); left: 0;
@@ -130,6 +130,7 @@
 </head>
 
 <body>
+<div id="map-container">
 <div id="map">
     <div id="console">
         <div id="controls-column">
@@ -171,7 +172,7 @@
     </div>
 </div>
 
-<!-- Chart panel — independently positioned -->
+<!-- Chart panel -->
 <div id="bottom-panel">
     <div id="chart-info-sidebar">
         <div id="summary-stat" class="stat-huge">—</div>
